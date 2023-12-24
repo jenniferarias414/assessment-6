@@ -11,6 +11,17 @@ const app = express();
 app.use(express.json());
 app.use(express.static(`${__dirname}/public`));
 
+// include and initialize the rollbar library with your access token
+var Rollbar = require('rollbar')
+var rollbar = new Rollbar({
+  accessToken: '753e4f1c047a43a680a1f1e4e0357fa5',
+  captureUncaught: true,
+  captureUnhandledRejections: true,
+})
+
+// record a generic message and send it to Rollbar
+rollbar.log('Hello world!')
+
 // Add up the total health of all the robots
 const calculateTotalHealth = (robots) =>
   robots.reduce((total, { health }) => total + health, 0);
@@ -40,6 +51,7 @@ app.get("/api/robots", (req, res) => {
   try {
     res.status(200).send(botsArr);
   } catch (error) {
+    rollbar.warning("Console tells me 'botsArr' is not defined, time to figure that out!")
     console.error("ERROR GETTING BOTS", error);
     res.sendStatus(400);
   }
@@ -56,6 +68,7 @@ app.get("/api/robots/shuffled", (req, res) => {
 });
 
 app.post("/api/duel", (req, res) => {
+  rollbar.info("User played another game again.")
   try {
     const { compDuo, playerDuo } = req.body;
 
@@ -69,18 +82,21 @@ app.post("/api/duel", (req, res) => {
       playerRecord.losses += 1;
       res.status(200).send("You lost!");
     } else {
-      playerRecord.losses += 1;
+      playerRecord.losses += 1; //bug for why all game results add to losses only, should be playerRecord.wins += 1
       res.status(200).send("You won!");
     }
   } catch (error) {
     console.log("ERROR DUELING", error);
+    rollbar.error("Bloop: error detected while dueling...")
     res.sendStatus(400);
   }
 });
 
 app.get("/api/player", (req, res) => {
   try {
+    rollbar.critical(`Critical error noted trying to get player stats!!`)
     res.status(200).send(playerRecord);
+
   } catch (error) {
     console.log("ERROR GETTING PLAYER STATS", error);
     res.sendStatus(400);
